@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.17.0
 	github.com/pkg/errors v0.9.1
 	github.com/sargassum-world/godest v0.5.1
-	github.com/urfave/cli/v2 v2.25.5
+	github.com/urfave/cli/v2 v2.25.7
 )
 
 require (
