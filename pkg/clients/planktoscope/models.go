@@ -5,11 +5,13 @@ import (
 )
 
 type Planktoscope struct {
-	Pump           Pump
-	PumpSettings   PumpSettings
-	CameraSettings CameraSettings
-	Imager         Imager
-	ImagerSettings ImagerSettings
+	Pump              Pump
+	PumpSettings      PumpSettings
+	CameraSettings    CameraSettings
+	Imager            Imager
+	ImagerSettings    ImagerSettings
+	Segmenter         Segmenter
+	SegmenterSettings SegmenterSettings
 }
 
 // Pump
@@ -87,5 +89,35 @@ func DefaultImagerSettings() ImagerSettings {
 		StepVolume: defaultStepVolume,
 		StepDelay:  defaultStepDelay,
 		Steps:      defaultSteps,
+	}
+}
+
+// Segmenter
+
+type Segmenter struct {
+	StateKnown   bool
+	Segmenting   bool
+	CurrentFrame uint64
+	LastObject   uint64
+	Start        time.Time
+}
+
+type SegmenterSettings struct {
+	Paths             []string
+	ProcessingID      uint64
+	Recurse           bool
+	ForceReprocessing bool
+	KeepObjects       bool
+	ExportEcoTaxa     bool
+}
+
+func DefaultSegmenterSettings() SegmenterSettings {
+	return SegmenterSettings{
+		Paths:             []string{"/home/pi/data/img/"},
+		ProcessingID:      1,
+		Recurse:           true,
+		ForceReprocessing: false,
+		KeepObjects:       true,
+		ExportEcoTaxa:     true,
 	}
 }

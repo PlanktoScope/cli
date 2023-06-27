@@ -3,9 +3,9 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/PlanktoScope/device-api-client-go)
+      - prefix(github.com/PlanktoScope/cli)
   goimports:
-    local-prefixes: github.com/PlanktoScope/device-api-client-go
+    local-prefixes: github.com/PlanktoScope/cli
   gocyclo:
     min-complexity: 15
   govet:

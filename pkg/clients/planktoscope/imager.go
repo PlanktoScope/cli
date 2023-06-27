@@ -41,12 +41,12 @@ func (c *Client) handleImagerStatusUpdate(_ string, rawPayload []byte) error {
 		return nil
 	case "Camera settings updated":
 		return nil
-	case "Started":
+	case startedStatus:
 		newState.Imaging = true
 		newState.Start = time.Now()
 	case "Interrupted":
 		newState.Imaging = false
-	case "Done":
+	case doneStatus:
 		newState.Imaging = false
 	}
 
@@ -139,6 +139,29 @@ func (c *Client) handleImagerUpdate(topic string, rawPayload []byte) error {
 			return errors.Wrap(err, "invalid imager config update command")
 		}
 	}
+	return nil
+}
+
+func (c *Client) handleImagerMessage(topic string, rawPayload []byte) error {
+	broker := c.Config.URL
+
+	switch topic {
+	default:
+		var payload interface{}
+		if err := json.Unmarshal(rawPayload, &payload); err != nil {
+			return errors.Wrapf(err, "%s/%s: unparseable payload %s", broker, topic, rawPayload)
+		}
+		c.Logger.Infof("%s/%s: %v", broker, topic, payload)
+	case "status/imager":
+		if err := c.handleImagerStatusUpdate(topic, rawPayload); err != nil {
+			return errors.Wrapf(err, "%s/%s: invalid payload %s", broker, topic, rawPayload)
+		}
+	case "imager/image":
+		if err := c.handleImagerUpdate(topic, rawPayload); err != nil {
+			return errors.Wrapf(err, "%s/%s: invalid payload %s", broker, topic, rawPayload)
+		}
+	}
+
 	return nil
 }
 

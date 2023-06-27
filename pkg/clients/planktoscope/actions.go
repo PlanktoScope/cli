@@ -123,3 +123,32 @@ func (c *Client) RunControllerAction(ctx context.Context, command string, params
 		return c.RunStopImagingAction(ctx)
 	}
 }
+
+// Segmenter Actions
+
+type PlanktoscopeSegmentingParams struct {
+	Paths             []string `hcl:"paths"`
+	ProcessingID      uint64   `hcl:"processing_id"`
+	ExportEcoTaxa     bool     `hcl:"export_ecotaxa"`
+	KeepObjects       bool     `hcl:"keep_objects"`
+	Recurse           bool     `hcl:"recurse"`
+	ForceReprocessing bool     `hcl:"force_reprocessing"`
+}
+
+func (c *Client) RunSegmentingAction(ctx context.Context, p PlanktoscopeSegmentingParams) error {
+	token, err := c.StartSegmenting(
+		p.Paths, p.ProcessingID,
+		p.Recurse, p.ForceReprocessing, p.KeepObjects, p.ExportEcoTaxa,
+	)
+	if err != nil {
+		return errors.Wrap(err, "couldn't send command to start segmenting")
+	}
+	stateUpdated := c.SegmenterStateBroadcasted()
+	// TODO: instead of always waiting forever, have an action-configured optional timeout before
+	// returning an error that we haven't heard any segmenter updates from the planktoscope.
+	if token.Wait(); token.Error() != nil {
+		return token.Error()
+	}
+	<-stateUpdated
+	return nil
+}

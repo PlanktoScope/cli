@@ -43,15 +43,18 @@ type Client struct {
 	logReconnectOnce     *sync.Once
 	logReconnectOnceMu   *sync.Mutex
 
-	stateL         *sync.RWMutex
-	pump           Pump
-	pumpB          *Broadcaster
-	pumpSettings   PumpSettings
-	cameraB        *Broadcaster
-	cameraSettings CameraSettings
-	imager         Imager
-	imagerB        *Broadcaster
-	imagerSettings ImagerSettings
+	stateL            *sync.RWMutex
+	pump              Pump
+	pumpB             *Broadcaster
+	pumpSettings      PumpSettings
+	cameraB           *Broadcaster
+	cameraSettings    CameraSettings
+	imager            Imager
+	imagerB           *Broadcaster
+	imagerSettings    ImagerSettings
+	segmenter         Segmenter
+	segmenterB        *Broadcaster
+	segmenterSettings SegmenterSettings
 }
 
 func NewClient(c Config, l Logger) (client *Client, err error) {
@@ -69,6 +72,8 @@ func NewClient(c Config, l Logger) (client *Client, err error) {
 	client.cameraSettings = DefaultCameraSettings()
 	client.imagerB = NewBroadcaster()
 	client.imagerSettings = DefaultImagerSettings()
+	client.segmenterB = NewBroadcaster()
+	client.segmenterSettings = DefaultSegmenterSettings()
 
 	c.MQTT.SetOnConnectHandler(client.handleConnected)
 	c.MQTT.SetConnectionLostHandler(client.handleConnectionLost)
@@ -82,11 +87,13 @@ func (c *Client) GetState() Planktoscope {
 	defer c.stateL.RUnlock()
 
 	return Planktoscope{
-		Pump:           c.pump,
-		PumpSettings:   c.pumpSettings,
-		CameraSettings: c.cameraSettings,
-		Imager:         c.imager,
-		ImagerSettings: c.imagerSettings,
+		Pump:              c.pump,
+		PumpSettings:      c.pumpSettings,
+		CameraSettings:    c.cameraSettings,
+		Imager:            c.imager,
+		ImagerSettings:    c.imagerSettings,
+		Segmenter:         c.segmenter,
+		SegmenterSettings: c.segmenterSettings,
 	}
 }
 
@@ -117,6 +124,7 @@ func (c *Client) handleConnectionLost(_ mqtt.Client, err error) {
 	c.pump.StateKnown = false
 	c.cameraSettings.StateKnown = false
 	c.imager.StateKnown = false
+	c.segmenter.StateKnown = false
 	c.Logger.Warn(errors.Wrap(err, "connection lost"))
 	// TODO: notify clients that control has been lost
 }
@@ -145,29 +153,18 @@ func (c *Client) handleMessage(topic mqtt.Client, m mqtt.Message) {
 		}
 		c.Logger.Infof("%s/%s: %v", broker, m.Topic(), payload)
 		return
-	case "status/pump":
-		if err := c.handlePumpStatusUpdate(topic, m.Payload()); err != nil {
-			c.Logger.Errorf(errors.Wrapf(
-				err, "%s/%s: invalid payload %s", broker, topic, rawPayload,
-			).Error())
+	case "actuator/pump", "status/pump":
+		if err := c.handlePumpMessage(topic, m.Payload()); err != nil {
+			c.Logger.Errorf(errors.Wrapf(err, "couldn't handle pump message").Error())
 		}
-	case "actuator/pump":
-		if err := c.handlePumpActuatorUpdate(topic, m.Payload()); err != nil {
-			c.Logger.Errorf(errors.Wrapf(
-				err, "%s/%s: invalid payload %s", broker, topic, rawPayload,
-			).Error())
+	case "imager/image", "status/imager":
+		if err := c.handleImagerMessage(topic, m.Payload()); err != nil {
+			c.Logger.Errorf(errors.Wrapf(err, "couldn't handle imager message").Error())
 		}
-	case "status/imager":
-		if err := c.handleImagerStatusUpdate(topic, m.Payload()); err != nil {
-			c.Logger.Errorf(errors.Wrapf(
-				err, "%s/%s: invalid payload %s", broker, topic, rawPayload,
-			).Error())
-		}
-	case "imager/image":
-		if err := c.handleImagerUpdate(topic, m.Payload()); err != nil {
-			c.Logger.Errorf(errors.Wrapf(
-				err, "%s/%s: invalid payload %s", broker, topic, rawPayload,
-			).Error())
+	case "segmenter/segment", "status/segmenter", "status/segmenter/object_id",
+		"status/segmenter/metric":
+		if err := c.handleSegmenterMessage(topic, m.Payload()); err != nil {
+			c.Logger.Errorf(errors.Wrapf(err, "couldn't handle segmenter message").Error())
 		}
 	}
 }

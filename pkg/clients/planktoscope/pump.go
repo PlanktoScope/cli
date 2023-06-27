@@ -23,6 +23,11 @@ func (c *Client) updatePumpState(newState Pump) {
 	c.pumpB.BroadcastNext()
 }
 
+const (
+	startedStatus = "Started"
+	doneStatus    = "Done"
+)
+
 func (c *Client) handlePumpStatusUpdate(_ string, rawPayload []byte) error {
 	type PumpStatus struct {
 		Status   string  `json:"status"`
@@ -40,13 +45,13 @@ func (c *Client) handlePumpStatusUpdate(_ string, rawPayload []byte) error {
 	default:
 		// TODO: write the status to the imager state for display in the GUI
 		return errors.Errorf("unknown status %s", status)
-	case "Started":
+	case startedStatus:
 		newState.Pumping = true
 		newState.Duration = time.Duration(payload.Duration) * time.Second
 	case "Interrupted":
 		newState.Pumping = false
 		newState.Duration = 0
-	case "Done":
+	case doneStatus:
 		newState.Pumping = false
 		newState.Duration = 0
 	}
@@ -132,6 +137,29 @@ func (c *Client) handlePumpActuatorUpdate(_ string, rawPayload []byte) error {
 		c.updatePumpSettings(newSettings)
 		c.Logger.Debugf("%s: %+v", c.Config.URL, newSettings)
 	}
+	return nil
+}
+
+func (c *Client) handlePumpMessage(topic string, rawPayload []byte) error {
+	broker := c.Config.URL
+
+	switch topic {
+	default:
+		var payload interface{}
+		if err := json.Unmarshal(rawPayload, &payload); err != nil {
+			return errors.Wrapf(err, "%s/%s: unparseable payload %s", broker, topic, rawPayload)
+		}
+		c.Logger.Infof("%s/%s: %v", broker, topic, payload)
+	case "status/pump":
+		if err := c.handlePumpStatusUpdate(topic, rawPayload); err != nil {
+			return errors.Wrapf(err, "%s/%s: invalid payload %s", broker, topic, rawPayload)
+		}
+	case "actuator/pump":
+		if err := c.handlePumpActuatorUpdate(topic, rawPayload); err != nil {
+			return errors.Wrapf(err, "%s/%s: invalid payload %s", broker, topic, rawPayload)
+		}
+	}
+
 	return nil
 }
 
