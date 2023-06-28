@@ -18,7 +18,7 @@ var app = &cli.App{
 	Name: "planktoscope",
 	// TODO: see if there's a way to get the version from a build tag, so that we don't have to update
 	// this manually
-	Version: "v0.1.0",
+	Version: "v0.2.0",
 	Usage:   "Command-line tool to operate and manage PlanktoScopes",
 	Commands: []*cli.Command{
 		devCmd,
