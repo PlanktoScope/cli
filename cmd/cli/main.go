@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	glog "github.com/labstack/gommon/log"
 	"github.com/urfave/cli/v2"
 )
 
@@ -21,6 +22,14 @@ var app = &cli.App{
 	Usage:   "Command-line tool to operate and manage PlanktoScopes",
 	Commands: []*cli.Command{
 		devCmd,
+	},
+	Flags: []cli.Flag{
+		&cli.Uint64Flag{
+			Name:    "log-level",
+			Value:   uint64(glog.INFO),
+			Usage:   "Log level (1=debug, 2=info, 3=warn, 4=error, 5=off)",
+			EnvVars: []string{"PLANKTOSCOPE_LOG_LEVEL"},
+		},
 	},
 	Suggest: true,
 }

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Added logging level command-line flag
+- The `dev proc start` subcommand logs segmenter state updates with level info, rather than printing them directly to stdout
+
 ## 0.1.0 - 2023-06-28
 
 - Added subcommands to listen to PlanktoScope state updates via the MQTT API

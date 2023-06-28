@@ -30,6 +30,7 @@ func makeConnectedClient(c *cli.Context) (*planktoscope.Client, planktoscope.Log
 		return nil, nil, errors.Wrap(err, "couldn't make MQTT client config")
 	}
 	logger := log.New(clientID)
+	logger.SetLevel(log.Lvl(c.Uint64("log-level")))
 	client, err := planktoscope.NewClient(config, logger)
 	if err != nil {
 		return nil, logger, errors.Wrapf(err, "couldn't make client for %s", apiURL)
@@ -241,7 +242,7 @@ func listenStartProc(
 		case <-client.SegmenterStateBroadcasted():
 			prevSegmenting := segmenting
 			state := client.GetState().Segmenter
-			fmt.Printf("%+v\n", state)
+			logger.Debugf("State updated: %+v\n", state)
 			if !state.StateKnown {
 				break
 			}
@@ -259,7 +260,7 @@ func listenStartProc(
 				logger.Info("Segmentation has finished!")
 				if awaitFinished {
 					logger.Info("Quitting because segmentation finished!")
-					fmt.Printf("Total segmented objects: %d\n", state.LastObject+1)
+					logger.Infof("Total segmented objects: %d\n", state.LastObject+1)
 					return nil
 				}
 			}
