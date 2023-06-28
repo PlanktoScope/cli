@@ -5,7 +5,7 @@ before:
 builds:
 - id: planktoscope-cli
   main: ./cmd/cli
-  binary: planktoscope-cli
+  binary: planktoscope
   env:
     - CGO_ENABLED=0
   targets:
