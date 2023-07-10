@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/atrox/haikunatorgo v2.0.0+incompatible
-	github.com/eclipse/paho.mqtt.golang v1.4.2
+	github.com/eclipse/paho.mqtt.golang v1.4.3
 	github.com/hashicorp/hcl/v2 v2.17.0
 	github.com/labstack/gommon v0.4.0
 	github.com/pkg/errors v0.9.1
