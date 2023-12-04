@@ -9,7 +9,7 @@ require (
 	github.com/labstack/gommon v0.4.0
 	github.com/pkg/errors v0.9.1
 	github.com/sargassum-world/godest v0.5.1
-	github.com/urfave/cli/v2 v2.25.7
+	github.com/urfave/cli/v2 v2.26.0
 )
 
 require (
